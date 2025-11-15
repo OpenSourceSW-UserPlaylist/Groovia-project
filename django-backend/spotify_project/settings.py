@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # 추가
     'rest_framework',
     'spotify_app',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
