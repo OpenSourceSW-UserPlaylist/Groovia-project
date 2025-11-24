@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'category_result_page.dart';
+import 'package:flutter_application_3/screens/analyzing_page.dart';
+import 'package:flutter_application_3/screens/playlist_result_page.dart';
+// import 'category_result_page.dart';
 
 class SongInputPage extends StatefulWidget {
   final String userName;
@@ -38,21 +40,10 @@ class _SongInputPageState extends State<SongInputPage> {
       return;
     }
 
-    // 다음 페이지로 이동
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            CategoryResultPage(songs: _songs, userName: widget.userName),
-      ),
+      MaterialPageRoute(builder: (context) => const AnalyzingPage()),
     );
-
-    // 이후 Django API 연동으로 대체 예정
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('분석을 시작합니다...')));
-
-    // TODO: 다음 화면(로딩 → 카테고리 결과)으로 이동
   }
 
   @override
