@@ -1,114 +1,46 @@
-import os, requests, time
-import numpy as np
-
-from django.shortcuts import redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .spotify_client import get_track_metadata, exchange_code_for_token
-from .feature_extractor import extract_features
-from .recommend_engine import AnnoyRecommender
+
+from spotify_app.services.recommendation_service import run_recommendation
+from spotify_app.services.url_parser import extract_track_id_from_url
+
 from dotenv import load_dotenv
-from urllib.parse import quote
+from django.conf import settings
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
-
-# Spotify 로그인 화면으로 이동시키는 API 
-# (spotify 인증 URL(auth_url)을 만들어 redirect)
-class SpotifyLoginView(APIView): 
-    def get(self, request):
-        scope = "user-read-private user-read-email"
-        auth_url = (
-            "https://accounts.spotify.com/authorize"
-            f"?client_id={CLIENT_ID}"
-            "&response_type=code"
-            f"&redirect_uri={REDIRECT_URI}"
-            f"&scope={scope}"
-        )
-        return redirect(auth_url)
+# ============================================================
+# 모드 스위치: settings.py 에서 SPOTIFY_MODE="A" or "B"
+# ============================================================
+SPOTIFY_MODE = getattr(settings, "SPOTIFY_MODE", "A")   # 기본 A(Flutter POST 모드) / # B(PingSpotifyView 모드)
 
 
-# Spotify 인증 완료하면 redirect_uri로 코드 수령 -> Access Token을 요청하는 API
-class SpotifyCallbackView(APIView):
-    def get(self, request):
-        code = request.GET.get("code")
-        if not code:
-            return Response({"error": "Missing code"}, status=400)
 
-        tokens = exchange_code_for_token(
-            code,
-            REDIRECT_URI,
-            CLIENT_ID,
-            CLIENT_SECRET
-        )
-
-        access_token = tokens.get("access_token")
-
-        view = PingSpotifyView()
-
-        return view.process_with_token(access_token)
-
+# ============================================================
+# B 모드: runserver 실행 시 자동 추천 실행
+# ============================================================
 class PingSpotifyView(APIView):
     """
-    1) 3개 음악 metadata → feature 추출
-    2) Annoy로 10곡 추천
-    3) 모든 결과를 한 번에 반환
+    3개 기본 Track으로 추천을 실행하는 테스트 View.
     """
 
-    # GET/POST에서 token을 request로 받지 않고,
-    # callback에서 직접 process_with_token(token) 호출하는 방식 사용
+    default_track_ids = [
+        "3n3Ppam7vgaVa1iaRUc9Lp",
+        "4VqPOruhp5EdPBeR92t6lQ",
+        "7ouMYWpwJ422jRcDASZB7P",
+    ]
 
-    def process_with_token(self, token):
-        # ----------------------------
-        # 1) track_ids 선언
-        # ----------------------------
-        track_ids = [
-            "3n3Ppam7vgaVa1iaRUc9Lp", 
-            "4VqPOruhp5EdPBeR92t6lQ",
-            "7ouMYWpwJ422jRcDASZB7P",
-        ]
+    def get(self, request):
+        """GET 요청을 받으면 바로 추천 실행"""
+        return self.process_with_token()
 
-        # ----------------------------
-        # 2) 트랙 metadata 가져오기
-        # ----------------------------
-        metadata_list = []
-        for tid in track_ids:
-            metadata = get_track_metadata(tid, token)
-            metadata_list.append(metadata)
+    def process_with_token(self):
 
-        # ----------------------------
-        # 3) feature 추출
-        # ----------------------------
-        features_list = []
-        for metadata in metadata_list:
-            print("\n\n\n\nSLEEPING.....\n\n\n\n")
-            time.sleep(0.8) # 0.8초 rest (spotify와는 무관하지만 일단 rest)
-            features = extract_features(metadata)
-            features_list.append(features)
+        metadata_list, features_list, recommended_ids = run_recommendation(
+            self.default_track_ids
+        )
 
-        # ----------------------------
-        # 4) Annoy 벡터 구성
-        # ----------------------------
-        user_vectors = []
-        for f in features_list:
-            numeric = f["numeric_vector"]
-            genre = f["genre_vector"]
-            vector = numeric + genre
-            user_vectors.append(vector)
-
-        # ----------------------------
-        # 5) Annoy 추천 실행
-        # ----------------------------
-        rec = AnnoyRecommender()
-        recommended_ids = rec.recommend_top_k(user_vectors, k=10)
-
-        # ----------------------------
-        # 6) 최종 응답 반환
-        # ----------------------------
         return Response({
             "success": True,
             "input_track_count": len(features_list),
@@ -122,43 +54,123 @@ class PingSpotifyView(APIView):
             "recommended_track_ids": recommended_ids,
             "recommended_count": len(recommended_ids)
         })
-    
-class PingView(APIView):
-    def get(self, request):
-        return Response({"message": "pong"})
-    
+
+
+# ============================================================
+# A 모드: Flutter POST 수신 → 추천 실행
+# ============================================================
 class UrlProcessView(APIView):
     """
-    Flutter에서 보낸 URL 리스트를 받아 처리하는 API
-    Method: POST
+    Flutter에서 여러 URL → track_id 추출 → 추천 실행
     """
+    def get(self, request):
+        return Response({"msg": "GET received"})
+
     def post(self, request):
-        # 1. Flutter에서 보낸 데이터 받기
-        # 예: {"urls": ["https://open.spotify.com/track/...", "https://..."]}
-        input_urls = request.data.get('urls', [])
+
+        # A 모드에서만 실행
+        if SPOTIFY_MODE != "A":
+            return Response(
+                {"error": "현재 모드는 A(Flutter POST 모드)가 아닙니다."},
+                status=400
+            )
+
+        input_urls = request.data.get("urls", [])
 
         if not input_urls:
             return Response(
-                {"error": "URL 리스트가 비어있습니다."}, 
+                {"error": "URL 리스트가 비어있습니다."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        processed_results = []
-
-        # 2. URL 처리 로직
+        # ---------------------------------------------------
+        # track_id 추출 단계
+        # ---------------------------------------------------
+        track_ids = []
+        print(input_urls)
         for url in input_urls:
-            # 예시: 단순 수신 확인 (나중에 여기에 Spotify ID 추출 로직 등을 넣으면 됩니다)
-            result_data = {
-                "original_url": url,
-                "status": "success",
-                "message": "URL을 정상적으로 수신했습니다."
-            }
-            processed_results.append(result_data)
+            tid = extract_track_id_from_url(url)
+            if tid:  
+                track_ids.append(tid)
 
-        # 3. 결과 반환
-        return Response({"results": processed_results}, status=status.HTTP_200_OK)
+        track_ids = track_ids[:3]
+        print(track_ids)
+
+        if not track_ids:
+            return Response(
+                {"error": "유효한 Spotify track_id를 추출하지 못했습니다."},
+                status=400
+            )
+        
+        # -------------------------
+        # 추천 실행
+        # -------------------------
+        metadata_list, features_list, recommended_ids = run_recommendation(track_ids)
+
+        print(recommended_ids)
+
+        return Response({
+            "message": f"추천 알고리즘 성공! 총 {len(recommended_ids)}곡 추천 완료.",
+            "result": recommended_ids
+        })
+        '''
+        # flutter로 리턴
+        return Response({
+            "success": True,
+            "received_urls": input_urls,
+            "parsed_track_ids": track_ids,
+            "input_track_count": len(track_ids),
+            "recommended_track_ids": recommended_ids
+        })
+        '''
+
+        '''
+        # flutter로 리턴
+        return Response({
+            # Flutter가 'results' 키를 기대하므로 리스트로 감싸서 반환
+            "results": [
+                {
+                        "success": True,
+                        "input_track_count": len(track_ids),
+                        "recommended_track_ids": recommended_ids
+                }
+            ],
+            # 추가적인 최상위 정보 (선택 사항)
+            "status_code": status.HTTP_200_OK,
+            "input_urls_processed": input_urls,
+        })
+        '''
 
 
+
+# ============================================================
+# PingView (기본 연결 확인용)
+# ============================================================
+class PingView(APIView):
+    def get(self, request):
+        return Response({
+            "message": "pong",
+            "mode": SPOTIFY_MODE  # 현재 모드 알려주기
+        })
+
+
+# ========================================================= #
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ========================================================= #
 # FeatureExtractView: 미사용
 '''
 class FeatureExtractView(APIView): #for test
