@@ -22,5 +22,5 @@ urlpatterns = [
     # spotify_app REST API 연결
     path('api/spotify/', include('spotify_app.urls')),
     # csv 로직 REST API 연결
-    path('api/csv/', include('csv.urls')),
+    path('api/csv/', include('csv_tools.urls')), 
 ]
