@@ -4,6 +4,8 @@ from rest_framework import status
 
 from spotify_app.services.recommendation_service import run_recommendation
 from spotify_app.services.url_parser import extract_track_id_from_url
+from spotify_app.services.spotify_client import get_track_metadata, get_client_credentials_token
+
 
 from dotenv import load_dotenv
 from django.conf import settings
@@ -61,58 +63,87 @@ class PingSpotifyView(APIView):
 # ============================================================
 class UrlProcessView(APIView):
     """
-    Flutter에서 여러 URL → track_id 추출 → 추천 실행
+    Flutter에서 여러 URL → track_id 추출 → 추천 실행 → 상세 정보(제목/이미지) 반환
     """
     def get(self, request):
-        return Response({"msg": "GET received"})
+        return Response({"msg": "GET received. 서버 정상 작동 중 ✅"})
 
     def post(self, request):
-
-        # A 모드에서만 실행
+        # A 모드 체크
         if SPOTIFY_MODE != "A":
-            return Response(
-                {"error": "현재 모드는 A(Flutter POST 모드)가 아닙니다."},
-                status=400
-            )
+            return Response({"error": "현재 모드는 A가 아닙니다."}, status=400)
 
+        # 1. 데이터 받기
         input_urls = request.data.get("urls", [])
+        
+        # ---------------------------------------------------------
+        # [핵심 1] 토큰이 없으면 서버가 스스로 발급 (Client Credentials)
+        # ---------------------------------------------------------
+        user_token = request.data.get("token") # Flutter가 보낸 토큰
+        
+        if not user_token:
+            print("ℹ️ Flutter에서 토큰 미전송 -> 서버 토큰 발급 시도")
+            try:
+                user_token = get_client_credentials_token()
+            except Exception as e:
+                return Response({"error": f"서버 토큰 발급 실패: {str(e)}"}, status=500)
 
         if not input_urls:
-            return Response(
-                {"error": "URL 리스트가 비어있습니다."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "URL 리스트가 비어있습니다."}, status=400)
 
-        # ---------------------------------------------------
-        # track_id 추출 단계
-        # ---------------------------------------------------
+        # ---------------------------------------------------------
+        # 2. track_id 추출
+        # ---------------------------------------------------------
         track_ids = []
-        print(input_urls)
         for url in input_urls:
             tid = extract_track_id_from_url(url)
-            if tid:  
-                track_ids.append(tid)
+            if tid: track_ids.append(tid)
 
-        track_ids = track_ids[:3]
-        print(track_ids)
+        track_ids = track_ids[:3] # 최대 3개
 
         if not track_ids:
-            return Response(
-                {"error": "유효한 Spotify track_id를 추출하지 못했습니다."},
-                status=400
-            )
+            return Response({"error": "유효한 Spotify ID를 찾지 못했습니다."}, status=400)
         
-        # -------------------------
-        # 추천 실행
-        # -------------------------
-        metadata_list, features_list, recommended_ids = run_recommendation(track_ids)
+        # ---------------------------------------------------------
+        # 3. 추천 실행 (ID 리스트 획득)
+        # ---------------------------------------------------------
+        # (앞의 메타데이터 변수는 안 쓰므로 _ 로 처리)
+        _, _, recommended_ids = run_recommendation(track_ids)
+        print(f"추천된 ID 목록: {recommended_ids}")
 
-        print(recommended_ids)
+        # ---------------------------------------------------------
+        # 4. [핵심 2] 추천된 ID로 '상세 정보(제목, 이미지)' 채우기
+        # ---------------------------------------------------------
+        final_playlist = []
+        
+        for item in recommended_ids:
+            rec_id = item["id"]   # 딕셔너리에서 id만 꺼내기
 
+            try:
+                # 위에서 만든 user_token을 사용하여 Spotify 조회
+                meta = get_track_metadata(rec_id, user_token)
+                
+                track_info = {
+                    "track_id": rec_id,
+                    "title": meta.get("name", "Unknown"),
+                    # 아티스트 리스트 중 첫 번째만 가져옴
+                    "artist": meta.get("artists", ["Unknown"])[0], 
+                    "album_image": meta.get("album_image_url", ""),
+                    "spotify_url": meta.get("spotify_url", "")
+                }
+                final_playlist.append(track_info)
+            except Exception as e:
+                print(f"Error fetching metadata for {rec_id}: {e}")
+                continue
+
+        # ---------------------------------------------------------
+        # 5. 결과 반환 (Flutter가 기다리는 'playlist' 키에 담기)
+        # ---------------------------------------------------------
         return Response({
-            "message": f"추천 알고리즘 성공! 총 {len(recommended_ids)}곡 추천 완료.",
-            "result": recommended_ids
-        })
+            "success": True,
+            "message": f"총 {len(final_playlist)}곡 추천 완료",
+            "playlist": final_playlist 
+        }, status=status.HTTP_200_OK)
         '''
         # flutter로 리턴
         return Response({
@@ -152,10 +183,6 @@ class PingView(APIView):
             "message": "pong",
             "mode": SPOTIFY_MODE  # 현재 모드 알려주기
         })
-
-
-# ========================================================= #
-
 
 
 

@@ -6,8 +6,8 @@ import csv
 
 from django.core.management.base import BaseCommand
 
-from spotify_app.spotify_client import get_track_metadata
-from spotify_app.feature_extractor import extract_features
+from spotify_app.services.spotify_client import get_track_metadata
+from spotify_app.services.feature_extractor import extract_features
 from spotify_app.recommend_engine import AnnoyRecommender
 
 

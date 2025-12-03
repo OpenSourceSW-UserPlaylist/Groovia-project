@@ -26,10 +26,11 @@ SECRET_KEY = 'django-insecure-@own_vhaoi0pxl#8&&y4a3j8uh#(66!c+!1r9k*xof)82ez-5+
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '172.31.73.101',
+    "172.31.72.14",
     "127.0.0.1",
     "localhost",
     "0.0.0.0",
+    '*',
 ]
 
 
@@ -140,3 +141,5 @@ SPOTIFY_GENRE_WEIGHT = 1.0
 # 실행 모드 선택
 SPOTIFY_MODE = "A"  # A → Flutter 요청 기반 (기본)
                     # B → 서버 시작 즉시 자동 실행
+
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']
