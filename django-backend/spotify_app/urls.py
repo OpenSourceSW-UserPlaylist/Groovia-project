@@ -5,7 +5,7 @@ from .views import PingSpotifyView, PingView, UrlProcessView
 
 urlpatterns = [
     path('ping-spotify', PingSpotifyView.as_view(), name='ping_spotify'),
-    path('ping/', PingView.as_view(), name='spotify-ping'),
+    path('ping/', PingView.as_view(), name='spotify_ping'),
     path('process-urls/', UrlProcessView.as_view(), name='process_urls'),
 ]
 

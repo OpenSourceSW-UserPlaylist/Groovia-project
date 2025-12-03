@@ -1,4 +1,3 @@
-import time
 from django.conf import settings
 from spotify_app.services.spotify_client import get_client_credentials_token, get_track_metadata
 from spotify_app.services.feature_extractor import extract_features
@@ -17,7 +16,6 @@ def run_recommendation(track_ids):
     # 2) features
     features_list = []
     for meta in metadata_list:
-        time.sleep(0.3)
         features_list.append(extract_features(meta))
 
     # 3) weighted vector
@@ -32,6 +30,41 @@ def run_recommendation(track_ids):
 
     # 4) Annoy
     rec = AnnoyRecommender()
-    recommended = rec.recommend_top_k(vectors, k=10)
+    recommended_ids = rec.recommend_top_k(vectors, k=50)   # 50개 받아옴
 
-    return metadata_list, features_list, recommended
+    # 👉 최종적으로 메타데이터는 10개만 조회
+    top10_ids = recommended_ids[:10]
+
+    recommended_details = []
+
+    for tid in top10_ids:
+        meta = get_track_metadata(tid, token)   # ★ 호출 10번만!
+        if not meta:
+            continue
+
+        # artist 리스트 정리
+        artists = meta.get("artists", [])
+        if isinstance(artists, list):
+            artist_name = ", ".join(str(a) for a in artists)
+        else:
+            artist_name = str(artists)
+
+        recommended_details.append({
+            "id": tid,
+            "title": meta.get("name", "Unknown Title"),
+            "artist": artist_name
+        })
+
+    # 중복 제거 (title + artist)
+    unique = []
+    seen = set()
+
+    for item in recommended_details:
+        key = (item["title"].lower(), item["artist"].lower())
+        if key not in seen:
+            unique.append(item)
+            seen.add(key)
+
+    # 최종 반환
+    return metadata_list, features_list, unique[:10]
+
