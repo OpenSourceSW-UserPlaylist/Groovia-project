@@ -26,36 +26,34 @@ class PingSpotifyView(APIView):
     """
     3개 기본 Track으로 추천을 실행하는 테스트 View.
     """
-
+    
     default_track_ids = [
-        "3n3Ppam7vgaVa1iaRUc9Lp",
-        "4VqPOruhp5EdPBeR92t6lQ",
-        "7ouMYWpwJ422jRcDASZB7P",
+        "3AJwUDP919kvQ9QcozQPxg",
+        "7D0RhFcb3CrfPuTJ0obrod",
+        "1mea3bSkSGXuIRvnydlB5b",
     ]
-
+    
+    '''
+    default_track_ids = [
+    "0VjIjW4GlUZAMYd2vXMi3b",  # Blinding Lights - The Weeknd
+    "463CkQjx2Zk1yXoT7XHjEa",  # Levitating - Dua Lipa
+    "6b8Be6ljOzmkOmFslEb23P"   # 24K Magic - Bruno Mars
+    ]
+    '''
     def get(self, request):
         """GET 요청을 받으면 바로 추천 실행"""
         return self.process_with_token()
 
     def process_with_token(self):
-
-        metadata_list, features_list, recommended_ids = run_recommendation(
-            self.default_track_ids
-        )
+        _, _, final_playlist = run_recommendation(self.default_track_ids)
 
         return Response({
             "success": True,
-            "input_track_count": len(features_list),
-            "input_tracks": [
-                {
-                    "track_id": metadata_list[i]["id"],
-                    "features": features_list[i]
-                }
-                for i in range(len(features_list))
-            ],
-            "recommended_track_ids": recommended_ids,
-            "recommended_count": len(recommended_ids)
-        })
+            "message": f"총 {len(final_playlist)}곡 추천 완료",
+            "playlist": final_playlist 
+        }, status=status.HTTP_200_OK)
+
+
 
 
 # ============================================================
@@ -75,21 +73,24 @@ class UrlProcessView(APIView):
 
         # 1. 데이터 받기
         input_urls = request.data.get("urls", [])
+
+        if not input_urls:
+            return Response({"error": "URL 리스트가 비어있습니다."}, status=400)
         
+        '''
         # ---------------------------------------------------------
-        # [핵심 1] 토큰이 없으면 서버가 스스로 발급 (Client Credentials)
+        # [핵심 1] 토큰이 없으면 서버가 스스로 발급 (Client Credentials) (willfix: flutter쪽에 토큰 전달 코드 여부 확인)
         # ---------------------------------------------------------
         user_token = request.data.get("token") # Flutter가 보낸 토큰
         
         if not user_token:
-            print("ℹ️ Flutter에서 토큰 미전송 -> 서버 토큰 발급 시도")
+            print("Flutter에서 토큰 미전송 -> 서버 토큰 발급 시도")
             try:
                 user_token = get_client_credentials_token()
             except Exception as e:
                 return Response({"error": f"서버 토큰 발급 실패: {str(e)}"}, status=500)
-
-        if not input_urls:
-            return Response({"error": "URL 리스트가 비어있습니다."}, status=400)
+        '''
+        
 
         # ---------------------------------------------------------
         # 2. track_id 추출
@@ -108,9 +109,9 @@ class UrlProcessView(APIView):
         # 3. 추천 실행 (ID 리스트 획득)
         # ---------------------------------------------------------
         # (앞의 메타데이터 변수는 안 쓰므로 _ 로 처리)
-        _, _, recommended_ids = run_recommendation(track_ids)
-        print(f"추천된 ID 목록: {recommended_ids}")
+        _, _, final_playlist = run_recommendation(track_ids)
 
+        '''
         # ---------------------------------------------------------
         # 4. [핵심 2] 추천된 ID로 '상세 정보(제목, 이미지)' 채우기
         # ---------------------------------------------------------
@@ -135,6 +136,7 @@ class UrlProcessView(APIView):
             except Exception as e:
                 print(f"Error fetching metadata for {rec_id}: {e}")
                 continue
+        '''
 
         # ---------------------------------------------------------
         # 5. 결과 반환 (Flutter가 기다리는 'playlist' 키에 담기)
@@ -144,33 +146,7 @@ class UrlProcessView(APIView):
             "message": f"총 {len(final_playlist)}곡 추천 완료",
             "playlist": final_playlist 
         }, status=status.HTTP_200_OK)
-        '''
-        # flutter로 리턴
-        return Response({
-            "success": True,
-            "received_urls": input_urls,
-            "parsed_track_ids": track_ids,
-            "input_track_count": len(track_ids),
-            "recommended_track_ids": recommended_ids
-        })
-        '''
-
-        '''
-        # flutter로 리턴
-        return Response({
-            # Flutter가 'results' 키를 기대하므로 리스트로 감싸서 반환
-            "results": [
-                {
-                        "success": True,
-                        "input_track_count": len(track_ids),
-                        "recommended_track_ids": recommended_ids
-                }
-            ],
-            # 추가적인 최상위 정보 (선택 사항)
-            "status_code": status.HTTP_200_OK,
-            "input_urls_processed": input_urls,
-        })
-        '''
+        
 
 
 

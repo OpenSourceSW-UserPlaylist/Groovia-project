@@ -10,6 +10,7 @@ from spotify_app.services.spotify_client import get_track_metadata
 from spotify_app.services.feature_extractor import extract_features
 from spotify_app.recommend_engine import AnnoyRecommender
 
+# 가중치 테스트하는 run_experiments.py 프로그램. python manage.oy run_experiments 로 단독 실행
 
 # -----------------------------------------
 # 1) 실험용 가중치 세트 

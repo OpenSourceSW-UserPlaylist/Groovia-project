@@ -8,7 +8,107 @@ DEFAULT_GENRE_VOCAB = [
     "rock", "indie", "edm", "jazz", "ballad"
 ]
 
+def extract_features(metadata, genre_vocab=DEFAULT_GENRE_VOCAB):
+    """
+    통일된 Vector Schema 기반 Feature Extractor
+    - Spotify 입력곡 metadata / Kaggle DB metadata 모두 동일 구조로 처리
+    - Audio-feature 없음
+    - Text embedding 없음 (pattern-based only)
+    """
 
+    # -----------------------------
+    # 기본 메타데이터 파싱
+    # -----------------------------
+    track_name = metadata.get("track_name") or metadata.get("track_name") or ""
+    album_name = metadata.get("album_name") or ""
+    artists = metadata.get("artists") or []
+    primary_artist = artists[0] if artists else ""
+    genres = metadata.get("genres") or []
+
+    duration_ms = metadata.get("duration_ms") or 0
+    explicit_flag = 1 if metadata.get("explicit") else 0
+
+    track_pop = metadata.get("track_popularity") or 0
+    artist_pop = metadata.get("artist_popularity") or 0
+    followers = metadata.get("artist_followers") or 0
+
+    # -----------------------------
+    # 날짜 처리 (Kaggle에서는 default=2000-01-01)
+    # -----------------------------
+    release_date = metadata.get("album_release_date", "2000-01-01")
+    try:
+        year = int(release_date[:4])
+        month = int(release_date[5:7])
+        day = int(release_date[8:10])
+    except:
+        year, month, day = 2000, 1, 1
+
+    today = datetime.date.today()
+    release_dt = datetime.date(year, month, day)
+    age_days = (today - release_dt).days if release_dt else 0
+    decade = (year // 10) * 10
+    quarter = (month - 1) // 3 + 1
+
+    # -----------------------------
+    # Genre Multi-hot Vector
+    # -----------------------------
+    genre_vector = [1 if g in genres else 0 for g in genre_vocab]
+
+    # -----------------------------
+    # Numeric Feature Vector (14)
+    # -----------------------------
+    numeric_features = {
+        "duration_seconds": duration_ms / 1000,
+        "duration_norm": duration_ms / 300000.0,
+        "explicit": explicit_flag,
+        "track_pop_norm": track_pop / 100.0,
+
+        "release_year_norm": (year - 2000) / 30.0,
+        "release_month": month / 12,
+        "release_day": day / 31,
+        "release_quarter": quarter / 4,
+        "release_decade": (decade - 2000) / 30,
+        "release_age_days": age_days / 7000,
+
+        "popularity_delta": artist_pop - track_pop,
+        "followers_log": float(np.log1p(followers)),
+
+        "duration_short_flag": 1 if duration_ms < 120000 else 0,
+        "duration_long_flag": 1 if duration_ms > 300000 else 0,
+    }
+
+    # -----------------------------
+    # Text Pattern Features (7)
+    # -----------------------------
+    text_pattern_features = {
+        "track_name_length": len(track_name) / 50,
+        "track_name_word_count": len(track_name.split()) / 10,
+        "track_name_has_digit": 1 if re.search(r"\d", track_name) else 0,
+        "track_name_has_special": 1 if re.search(r"[^\w\s]", track_name) else 0,
+
+        "artist_name_length": len(primary_artist) / 30,
+        "artist_word_count": len(primary_artist.split()) / 10,
+
+        "album_name_length": len(album_name) / 50,
+    }
+
+    # -----------------------------
+    # 벡터 구성
+    # -----------------------------
+    numeric_vector = list(numeric_features.values())
+    text_vector = list(text_pattern_features.values())
+
+    final_vector = numeric_vector + genre_vector + text_vector
+
+    return {
+        "numeric_features": numeric_features,
+        "genre_vector": genre_vector,
+        "text_features": text_pattern_features,
+        "vector": final_vector,
+        "vector_dim": len(final_vector)
+    }
+
+'''
 def extract_features(metadata, genre_vocab=DEFAULT_GENRE_VOCAB):
     """ 기본 Mega Extractor (임베딩 없음, 100+ 특징) """
 
@@ -117,3 +217,4 @@ def extract_features(metadata, genre_vocab=DEFAULT_GENRE_VOCAB):
         "total_feature_count": len(numeric_vector) + len(genre_vector) + len(text_features),
         "version": "mega-basic"
     }
+'''
