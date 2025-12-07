@@ -16,7 +16,7 @@ class _UrlProcessorScreenState extends State<UrlProcessorScreen> {
     // Android 에뮬레이터: 'http://10.0.2.2:8000/api/process-urls/'
     // iOS 시뮬레이터: 'http://127.0.0.1:8000/api/process-urls/'
     // 실제 기기: PC의 내부 IP (예: 192.168.0.x:8000...)
-    final String apiUrl = 'http://127.0.0.1:8000/api/process-urls/';
+    final String apiUrl = 'https://ungifted-witchingly-sol.ngrok-free.dev/api/process-urls/';
 
     try {
       final response = await http.post(

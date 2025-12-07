@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_nameController.text.isNotEmpty) {
       // 다음 화면으로 이동 (Home Screen)
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen(userName: _nameController.text),),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
