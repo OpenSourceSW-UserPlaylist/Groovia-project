@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_3/screens/playlist_result_page.dart';
 import 'playlist_result_page.dart';
 import 'package:http/http.dart' as http;
 

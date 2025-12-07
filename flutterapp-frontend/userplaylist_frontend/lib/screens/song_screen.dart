@@ -4,12 +4,13 @@ class SongScreen extends StatelessWidget {
   final String songTitle;
   final String artistName;
   // TODO: 실제 앱에서는 앨범 아트 URL과 가사 데이터가 필요합니다.
-  final String imageUrl = 'assets/images/grainy_days.png'; 
+  final String imageUrl; 
   
   const SongScreen({
     super.key,
-    this.songTitle = 'grainy days',
-    this.artistName = 'LoFi LoFi',
+    required this.songTitle,
+    required this.artistName,
+    required this.imageUrl,
   });
 
   @override

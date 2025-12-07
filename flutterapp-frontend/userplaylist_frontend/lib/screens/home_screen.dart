@@ -13,19 +13,19 @@ class Album {
 
 // 2. 더미 데이터 리스트 (이전과 동일)
 final List<Album> topVibes = [
-  Album('Dark Academia', 'assets/images/vibe_1.png', 'Playlist'),
-  Album('Chill Rap', 'assets/images/vibe_2.png', 'Playlist'),
-  Album('LoFi', 'assets/images/vibe_3.png', 'Playlist'),
-  Album('Synthwave', 'assets/images/vibe_4.png', 'Playlist'),
-  Album('Focus Beats', 'assets/images/vibe_5.png', 'Playlist'),
-  Album('K-Pop Mix', 'assets/images/vibe_6.png', 'Playlist'),
+  Album('Dark Academia', 'assets/images/dark_academia.png', 'Playlist'),
+  Album('Chill Rap', 'assets/images/chill_rap.png', 'Playlist'),
+  Album('LoFi', 'assets/images/lofi.png', 'Playlist'),
+  Album('Synthwave', 'assets/images/synthwave.png', 'Playlist'),
+  Album('Focus Beats', 'assets/images/focus_beats.png', 'Playlist'),
+  Album('K-Pop Mix', 'assets/images/k-pop.png', 'Playlist'),
 ];
 
 final List<Album> topGenres = [
-  Album('Hip Hop', 'assets/images/genre_1.png', 'Genre'),
-  Album('Pop', 'assets/images/genre_2.png', 'Genre'),
-  Album('Indie', 'assets/images/genre_3.png', 'Genre'),
-  Album('Rock', 'assets/images/genre_4.png', 'Genre'),
+  Album('Hip Hop', 'assets/images/hiphop.png', 'Genre'),
+  Album('Pop', 'assets/images/pop.png', 'Genre'),
+  Album('Indie', 'assets/images/indie.png', 'Genre'),
+  Album('Rock', 'assets/images/rock.png', 'Genre'),
 ];
 
 
@@ -237,6 +237,7 @@ class _AlbumItem extends StatelessWidget {
               builder: (context) => SongScreen(
                 songTitle: album.title,
                 artistName: 'Various Artists',
+                imageUrl: album.imageUrl,
               ),
             ),
           );
@@ -249,7 +250,7 @@ class _AlbumItem extends StatelessWidget {
             SizedBox( 
               width: 60,
               height: 60,
-              child: Image.asset(album.imageUrl, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+              child: Image.asset(album.imageUrl, fit: BoxFit.cover, cacheWidth: 200, errorBuilder: (context, error, stackTrace) {
                 return Icon(Icons.image, size: 60, color: Colors.grey[400]);
               }),
             ),
@@ -291,7 +292,7 @@ class _GenreCard extends StatelessWidget {
             height: 150, 
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(album.imageUrl, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+              child: Image.asset(album.imageUrl, fit: BoxFit.cover, cacheWidth: 200, errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: Colors.grey[800],
                   child: Center(child: Icon(Icons.image, size: 50, color: Colors.grey[400])),
