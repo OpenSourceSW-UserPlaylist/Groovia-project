@@ -34,9 +34,8 @@ final List<Album> topGenres = [
 // -----------------------------------------------------
 class HomeScreen extends StatefulWidget {
   final String userName; // LoginScreen에서 받은 사용자 이름 필드 추가
-
   // 기본값을 설정하거나, 로그인 화면에서 이름을 전달받도록 합니다.
-  const HomeScreen({super.key, this.userName = "User"}); 
+  const HomeScreen({super.key, this.userName = "User",}); 
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -197,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SongInputPage(userName: widget.userName),
+              builder: (context) => SongInputPage(userName: widget.userName, ),
             ),
           ).then((_) {
             // SongInputPage에서 돌아왔을 때, 현재 탭을 Home으로 다시 설정 (선택 사항)

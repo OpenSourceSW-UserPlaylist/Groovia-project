@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Android 에뮬레이터 기준
-  static const String baseUrl = "http://172.31.79.238:8000";
+  static const String baseUrl = "https://ungifted-witchingly-sol.ngrok-free.dev";
 
   /// 1) Ping API
   static Future<String> ping() async {

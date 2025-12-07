@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'category_result_page.dart';
+import 'package:flutter_application_3/screens/playlist_result_page.dart';
+import 'playlist_result_page.dart';
+import 'package:http/http.dart' as http;
 
 class SongInputPage extends StatefulWidget {
   final String userName;
 
-  const SongInputPage({super.key, required this.userName});
+  const SongInputPage({super.key, required this.userName,});
 
   @override
   State<SongInputPage> createState() => _SongInputPageState();
@@ -30,29 +33,67 @@ class _SongInputPageState extends State<SongInputPage> {
     });
   }
 
-  void _analyzeSongs() {
+  Future<void> _analyzeSongs() async {
     if (_songs.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('먼저 노래를 한 곡 이상 입력해주세요!')));
+      ).showSnackBar(const SnackBar(content: Text('분석할 URL을 한 개 이상 입력해주세요!')));
       return;
     }
-
-    // 다음 페이지로 이동
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            CategoryResultPage(songs: _songs, userName: widget.userName),
-      ),
-    );
-
+    
     // 이후 Django API 연동으로 대체 예정
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('분석을 시작합니다...')));
 
     // TODO: 다음 화면(로딩 → 카테고리 결과)으로 이동
+    final String apiUrl = "https://ungifted-witchingly-sol.ngrok-free.dev/api/spotify/process-urls/";
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+
+        body: jsonEncode({
+          "urls": _songs,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+        List<dynamic> resultPlaylist = data['playlist'] ?? [];
+
+        if (resultPlaylist.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('추천 결과가 없습니다. 다른 노래를 넣어보세요!')),
+          );
+          return;
+        }
+
+        if (!mounted) return;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:(context) => PlaylistResultPage(
+              userName: widget.userName,
+              playlistData: resultPlaylist,
+            ),
+          ),
+        );
+      } else {
+        print('Server Error: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('분석 실패: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      print('Connection Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('서버 연결 실패: $e')),
+      );
+    }
   }
 
   @override
@@ -168,7 +209,7 @@ class _SongInputPageState extends State<SongInputPage> {
                   ),
                 ),
                 child: const Text(
-                  'Analyze 🎧',
+                  'Analyze & Get Playlist 🎧',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),

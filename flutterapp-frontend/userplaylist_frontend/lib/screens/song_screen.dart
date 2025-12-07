@@ -39,35 +39,39 @@ class SongScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: Column(
-          children: <Widget>[
-            const SizedBox(height: 30),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: 30),
             
-            // 🖼️ 앨범 아트
-            _buildAlbumArt(context),
+              // 🖼️ 앨범 아트
+              _buildAlbumArt(context),
             
-            const SizedBox(height: 50),
+              const SizedBox(height: 50),
 
-            // 🎵 노래 정보
-            _buildSongInfo(primaryColor),
+              // 🎵 노래 정보
+              _buildSongInfo(primaryColor),
 
-            const SizedBox(height: 40),
+              const SizedBox(height: 40),
 
-            // 📏 재생 바 및 시간 표시
-            _buildPlaybackBar(primaryColor),
+              // 📏 재생 바 및 시간 표시
+              _buildPlaybackBar(primaryColor),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            // ⏯️ 컨트롤 버튼
-            _buildControls(primaryColor),
+              // ⏯️ 컨트롤 버튼
+              _buildControls(primaryColor),
 
-            const SizedBox(height: 50),
+              const SizedBox(height: 50),
 
-            // 🎤 가사 (현재 재생 중인 가사 강조)
-            _buildLyricsSection(primaryColor),
-          ],
+              // 🎤 가사 (현재 재생 중인 가사 강조)
+              _buildLyricsSection(primaryColor),
+              
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );
