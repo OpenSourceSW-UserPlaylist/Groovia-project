@@ -10,6 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import sys
+sys.path.append(r"D:\dnnoy")
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -135,11 +138,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Spotify Feature Weights ---
 SPOTIFY_NUMERIC_WEIGHT = 1.0
-SPOTIFY_GENRE_WEIGHT = 1.0
-
+SPOTIFY_GENRE_WEIGHT = 1.2
+SPOTIFY_TEXT_WEIGHT = 0.4
 
 # 실행 모드 선택
 SPOTIFY_MODE = "A"  # A → Flutter 요청 기반 (기본)
-                    # B → 서버 시작 즉시 자동 실행
+                    # B → 서버 시작 즉시 자동 테스트 (테스트용)
 
 CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']
+
+# annoy 읽어오기
+ANNOY_DIR = "D:/dnnoy"
+
+SPOTIFY_VECTOR_DIM = 31
+
+
+
