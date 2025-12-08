@@ -34,12 +34,12 @@ def run_recommendation(track_ids):
         full_vector = numeric + genre + text
         vectors.append(full_vector)
 
-    # 3) Annoy 추천 50개 받아오기
+    # 3) Annoy 추천 20개 받아오기
     rec = AnnoyRecommender()
-    recommended_ids = rec.recommend_top_k(vectors, k=50)
+    recommended_ids = rec.recommend_top_k(vectors, k=20)
 
 
-    # 4) 50개 전체 메타데이터 조회 
+    # 4) 20개 전체 메타데이터 조회 
     raw_details = []
 
     for tid in recommended_ids:
