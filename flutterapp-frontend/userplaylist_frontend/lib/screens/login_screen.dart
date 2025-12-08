@@ -130,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20), // Start 버튼과 새 버튼 사이 간격 추가
 
             // 🔗 API Test Page 이동 버튼 추가 (요청하신 부분)
-            SizedBox(
+            /* SizedBox(
               height: 50, // 높이를 Start 버튼과 일치시킴
               width: double.infinity,
               child: ElevatedButton(
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            const Spacer(), // 남은 공간을 차지하여 하단 위젯을 밀어냅니다.
+            const Spacer(), // 남은 공간을 차지하여 하단 위젯을 밀어냅니다. */
 
             // 하단 Spotify 저작권 표시 (기존과 동일)
             Padding(
