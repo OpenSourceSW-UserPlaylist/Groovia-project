@@ -76,21 +76,6 @@ class UrlProcessView(APIView):
 
         if not input_urls:
             return Response({"error": "URL 리스트가 비어있습니다."}, status=400)
-        
-        '''
-        # ---------------------------------------------------------
-        # [핵심 1] 토큰이 없으면 서버가 스스로 발급 (Client Credentials) (willfix: flutter쪽에 토큰 전달 코드 여부 확인)
-        # ---------------------------------------------------------
-        user_token = request.data.get("token") # Flutter가 보낸 토큰
-        
-        if not user_token:
-            print("Flutter에서 토큰 미전송 -> 서버 토큰 발급 시도")
-            try:
-                user_token = get_client_credentials_token()
-            except Exception as e:
-                return Response({"error": f"서버 토큰 발급 실패: {str(e)}"}, status=500)
-        '''
-        
 
         # ---------------------------------------------------------
         # 2. track_id 추출
@@ -111,35 +96,8 @@ class UrlProcessView(APIView):
         # (앞의 메타데이터 변수는 안 쓰므로 _ 로 처리)
         _, _, final_playlist = run_recommendation(track_ids)
 
-        '''
         # ---------------------------------------------------------
-        # 4. [핵심 2] 추천된 ID로 '상세 정보(제목, 이미지)' 채우기
-        # ---------------------------------------------------------
-        final_playlist = []
-        
-        for item in recommended_ids:
-            rec_id = item["id"]   # 딕셔너리에서 id만 꺼내기
-
-            try:
-                # 위에서 만든 user_token을 사용하여 Spotify 조회
-                meta = get_track_metadata(rec_id, user_token)
-                
-                track_info = {
-                    "track_id": rec_id,
-                    "title": meta.get("name", "Unknown"),
-                    # 아티스트 리스트 중 첫 번째만 가져옴
-                    "artist": meta.get("artists", ["Unknown"])[0], 
-                    "album_image": meta.get("album_image_url", ""),
-                    "spotify_url": meta.get("spotify_url", "")
-                }
-                final_playlist.append(track_info)
-            except Exception as e:
-                print(f"Error fetching metadata for {rec_id}: {e}")
-                continue
-        '''
-
-        # ---------------------------------------------------------
-        # 5. 결과 반환 (Flutter가 기다리는 'playlist' 키에 담기)
+        # 4. 결과 반환 (Flutter가 기다리는 'playlist' 키에 담기)
         # ---------------------------------------------------------
         return Response({
             "success": True,
@@ -160,89 +118,3 @@ class PingView(APIView):
             "mode": SPOTIFY_MODE  # 현재 모드 알려주기
         })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ========================================================= #
-# FeatureExtractView: 미사용
-'''
-class FeatureExtractView(APIView): #for test
-    """ 기본 Mega Extractor """
-    def get(self, request):
-        token = request.GET.get("token")
-        track_id = request.GET.get("track_id")
-
-        metadata = get_track_metadata(track_id, token)
-        features = extract_features(metadata)
-
-        return Response({
-            "success": True,
-            "mode": "basic",
-            "features": features
-        })
-'''
-
-# RecommendView: 미사용
-'''
-class RecommendView(APIView): #for test
-    """
-    MultiTrackFeatureExtractView 결과(JSON)를 입력받아
-    Annoy 기반 추천 10곡 반환
-    """
-
-    def post(self, request):
-        tracks = request.data.get("tracks", [])
-
-        if len(tracks) == 0:
-            return Response({"error": "tracks missing"}, status=400)
-
-        user_vectors = []
-
-        try:
-            for track in tracks:
-                nf = track["features"]["numeric_vector"]
-                gf = track["features"]["genre_vector"]
-                vector = nf + gf
-                user_vectors.append(vector)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
-
-        # Annoy 추천 실행
-        rec = AnnoyRecommender()
-        recommended_ids = rec.recommend_top_k(user_vectors, k=10)
-
-        return Response({
-            "success": True,
-            "mode": "embedding",
-            "features": features
-            "recommended_track_ids": recommended_ids,
-            "count": len(recommended_ids)
-        })
-'''
-
-# RecommendView: 미사용 (검색 결과 필요 시 사용)
-'''
-class SpotifySearchView(APIView): # Spotify 곡 검색 결과를 Django REST API로 전달하는 엔드포인트
-    def get(self, request):
-        access_token = request.GET.get("token")
-        query = request.GET.get("q", "IU")
-        if not access_token:
-            return Response({"error": "Missing access token"}, status=400)
-
-        headers = {"Authorization": f"Bearer {access_token}"}
-        url = f"https://api.spotify.com/v1/search?q={query}&type=track&limit=5"
-        r = requests.get(url, headers=headers)
-        r.raise_for_status()
-        return Response(r.json())
-'''

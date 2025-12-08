@@ -1,3 +1,6 @@
+# =============================================
+# url에서 id 추출하는 함수
+# =============================================
 def extract_track_id_from_url(spotify_url: str | None) -> str | None:
     if not spotify_url:
         return None
