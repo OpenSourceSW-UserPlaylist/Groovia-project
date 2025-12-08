@@ -9,12 +9,6 @@ DEFAULT_GENRE_VOCAB = [
 ]
 
 def extract_features(metadata, genre_vocab=DEFAULT_GENRE_VOCAB):
-    """
-    통일된 Vector Schema 기반 Feature Extractor
-    - Spotify 입력곡 metadata / Kaggle DB metadata 모두 동일 구조로 처리
-    - Audio-feature 없음
-    - Text embedding 없음 (pattern-based only)
-    """
 
     # -----------------------------
     # 기본 메타데이터 파싱
