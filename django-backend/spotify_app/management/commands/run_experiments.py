@@ -82,13 +82,13 @@ def run_experiment(track_ids, numeric_weight, genre_weight, token):
 # 5) Management Command
 # -----------------------------------------
 class Command(BaseCommand):
-    help = "Run automated recommendation experiments (weights × track count)"
+    help = "Run automated recommendation experiments (weights x track count)"
 
     def handle(self, *args, **options):
 
         # 자동 Access Token
         access_token = get_client_credentials_token()
-        self.stdout.write(self.style.SUCCESS("✓ Spotify Token 발급 완료"))
+        self.stdout.write(self.style.SUCCESS("Spotify Token 발급 완료"))
 
         all_results = []
 
@@ -114,9 +114,9 @@ class Command(BaseCommand):
                     ",".join(result["recommended"])
                 ])
 
-                self.stdout.write(f" → Completed case {idx}")
+                self.stdout.write(f" -> Completed case {idx}")
 
-        self.stdout.write(self.style.SUCCESS("\n✓ 모든 실험 완료! (CSV만 생성)"))
+        self.stdout.write(self.style.SUCCESS("\n모든 실험 완료!"))
 
         # ----------------------------
         # CSV 저장
@@ -132,11 +132,11 @@ class Command(BaseCommand):
             ])
             writer.writerows(all_results)
 
-        self.stdout.write(self.style.SUCCESS(f"✓ CSV 생성 완료 → {output_csv}"))
+        self.stdout.write(self.style.SUCCESS(f"CSV 생성 완료 → {output_csv}"))
 
 
         # ====================================================
-        # 6) 입력 트랙 vs 추천 결과 유사도 검사 (콘솔 출력만)
+        # 6) 입력 트랙 vs 추천 결과 유사도 검사 
         # ====================================================
 
         cases = {}
@@ -171,4 +171,4 @@ class Command(BaseCommand):
                 f"{cname}  (입력 {tcount}트랙)  →  유사도: {sim:.4f}"
             )
 
-        self.stdout.write(self.style.SUCCESS("\n✓ 전체 실험 종료 (CSV + 유사도 계산만)"))
+        self.stdout.write(self.style.SUCCESS("\n전체 실험 종료"))

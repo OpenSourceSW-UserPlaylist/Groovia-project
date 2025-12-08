@@ -6,7 +6,7 @@ from annoy import AnnoyIndex
 
 
 # ============================================================
-# 추천 핵심 로직 (두 모드가 공유하는 기능)
+# 추천 핵심 로직 
 # ============================================================
 def run_recommendation(track_ids):
 
@@ -39,7 +39,7 @@ def run_recommendation(track_ids):
     recommended_ids = rec.recommend_top_k(vectors, k=50)
 
 
-    # 4) 50개 전체 메타데이터 조회 (한 번만)
+    # 4) 50개 전체 메타데이터 조회 
     raw_details = []
 
     for tid in recommended_ids:
